@@ -5,6 +5,8 @@ namespace AppBundle\Entity;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Component\Validator\Constraints as Assert;
+use Gedmo\Mapping\Annotation as Gedmo;
+use AppBundle\Entity\User;
 
 /**
  * @ORM\Entity(repositoryClass="AppBundle\Repository\GenusRepository")
@@ -15,6 +17,7 @@ class Genus {
     public function __construct()
     {
         $this->notes = new ArrayCollection();
+        $this->genusScientists = new ArrayCollection();
     }
 
     /**
@@ -61,10 +64,27 @@ class Genus {
     private $funFact;
 
     /**
+     * @ORM\Column(type="string", unique=true)
+     * @Gedmo\Slug(fields={"name"})
+     */
+    private $slug;
+
+    /**
      * @Assert\NotBlank()
      * @ORM\Column(type="date")
      */
     private $firstDiscoveredAt;
+
+    /**
+     * @ORM\ManyToMany(targetEntity="User")
+     * @ORM\JoinTable(name="genus_scientist")
+     */
+    private $genusScientists;
+
+    /**
+     * @ORM\Column(type="string", nullable=true)
+     */
+    private $avatarUri;
 
     /**
      * Gets the value of id.
@@ -206,5 +226,45 @@ class Genus {
     public function getIsPublished()
     {
         return $this->isPublished;
+    }
+
+    public function getSlug()
+    {
+        return $this->slug;
+    }
+
+    public function setSlug($slug)
+    {
+        $this->slug = $slug;
+
+        return $this;
+    }
+
+    public function addGenusScientist(User $user){
+        if ($this->genusScientists->contains($user)) {
+            return;
+        }
+
+        $this->genusScientists[] = $user;
+    }
+
+    public function getAvatarUri()
+    {
+        return $this->avatarUri;
+    }
+
+    public function setAvatarUri($avatarUri)
+    {
+        $this->avatarUri = $avatarUri;
+
+        return $this;
+    }
+
+    /**
+     * @return ArrayCollection|User[]
+     */
+    public function getGenusScientists()
+    {
+        return $this->genusScientists;
     }
 }

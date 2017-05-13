@@ -1,11 +1,35 @@
 {{ form_start(genusForm) }}
+    {{ form_errors(genusForm) }}
+
     {{ form_row(genusForm.name) }}
-    {{ form_row(genusForm.subFamily) }}
+    {{ form_row(genusForm.subFamily, {
+        label: 'Hello',
+        attr: {
+            class: 'foo'
+        },
+        placeholder: 'Select a sub family'
+    }) }}
     {{ form_row(genusForm.speciesCount) }}
     {{ form_row(genusForm.funFact) }}
-    {{ form_row(genusForm.isPublished) }}
+    {{ form_row(genusForm.isPublished,{
+        help: 'Should this genus be shown on the site?'
+    }) }}
+
     {{ form_row(genusForm.firstDiscoveredAt) }}
+{#     {{ form_label(genusForm.firstDiscoveredAt.year) }}
+    {% do genusForm.firstDiscoveredAt.year.setRendered() %}
+    <select id="{{ genusForm.firstDiscoveredAt.year.vars.id }}"
+            name="{{ genusForm.firstDiscoveredAt.year.vars.full_name }}">
+        {% for choice in genusForm.firstDiscoveredAt.year.vars.choices %}
+            <option value="{{ choice.value }}" {{ choice.value == genusForm.firstDiscoveredAt.year.vars.data }}>{{ choice.label }}</option>
+        {% endfor %}
+    </select>
+    {{ form_errors(genusForm.firstDiscoveredAt.year) }}
+    {{ form_row(genusForm.firstDiscoveredAt.month) }}
+    {{ form_row(genusForm.firstDiscoveredAt.day) }} #}
+
     <button type="submit" class="btn btn-primary" formnovalidate>
         save
     </button>
 {{ form_end(genusForm) }}
+

@@ -14,4 +14,19 @@ class SubFamilyRepository extends EntityRepository
                     ->orderBy('sub_family.name', 'ASC');
     }
 
+    /**
+     * Helper method to return ANY SubFamily.
+     *
+     * This is mostly useful when playing and testing things.
+     *
+     * @return SubFamily
+     */
+    public function findAny()
+    {
+        return $this->createQueryBuilder('sub_family')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
 }

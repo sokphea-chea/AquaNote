@@ -14,29 +14,42 @@ use AppBundle\Services\MarkdownTransformer;
 
 class GenusController extends Controller
 {
-
     /**
      * @Route("/genus/new")
      */
     public function newAction(){
-        $genus = new Genus();
-        $genus->setName('Octopus'.rand(1, 100));
-        $genus->setSubFamily('Octopodinae');
-        $genus->setSpeciesCount(rand(100, 99999));
-
-        $note = new GenusNote();
-        $note->setUsername('AquaWeaver');
-        $note->setUserAvatarFilename('ryan.jpeg');
-        $note->setNote('I counted 8 legs... as they wrapped around me');
-        $note->setCreatedAt(new \DateTime('-1 month'));
-        $note->setGenus($genus);
-
         $em = $this->getDoctrine()->getManager();
+        $subFamily = $em->getRepository('AppBundle:SubFamily')
+            ->findAny();
+
+        $genus = new Genus();
+        $genus->setName('Octopus'.rand(1, 10000));
+        $genus->setSubFamily($subFamily);
+        $genus->setSpeciesCount(rand(100, 99999));
+        $genus->setFirstDiscoveredAt(new \DateTime('50 years'));
+
+        $genusNote = new GenusNote();
+        $genusNote->setUsername('AquaWeaver');
+        $genusNote->setUserAvatarFilename('ryan.jpeg');
+        $genusNote->setNote('I counted 8 legs... as they wrapped around me');
+        $genusNote->setCreatedAt(new \DateTime('-1 month'));
+        $genusNote->setGenus($genus);
+
+        $user = $em->getRepository('AppBundle:User')
+            ->findOneBy(['email' => 'aquanaut1@example.org']);
+
+        $genus->addGenusScientist($user);
+        $genus->addGenusScientist($user);
+
         $em->persist($genus);
-        $em->persist($note);
+        $em->persist($genusNote);
         $em->flush();
 
-        return new Response('<html><body>Genus created!</body></html>');
+        return new Response(sprintf(
+            '<html><body>Genus created! <a href="%s">%s</a></body></html>',
+            $this->generateUrl('genus_show', ['slug' => $genus->getSlug()]),
+            $genus->getName()
+        ));
     }
 
     /**
@@ -53,45 +66,26 @@ class GenusController extends Controller
 
 
     /**
-     * @Route("/genus/{genusName}", name="genus_show")
+     * @Route("/genus/{slug}", name="genus_show")
      */
-    public function showAction($genusName)
+    public function showAction(Genus $genus)
     {
-        // $funFact = 'Octopuses can change the color of their body in just *three-tenths* of a second!';
-
-        // $cache = $this->get('doctrine_cache.providers.my_markdown_cache');
-
-        // $key = md5($funFact);
-
-        // if ($cache->contains($key)) {
-        //     $funFact = $cache->fetch($key);
-        // } else {
-        //     sleep(1);
-        //     $funFact = $this->get('markdown.parser')->transform($funFact);
-        //     $cache->save($key, $funFact);
-        // }
         $em = $this->getDoctrine()->getManager();
-        $genus = $em->getRepository('AppBundle:Genus')->findOneBy(['name'=> $genusName]);
-        if (!$genus) {
-            throw $this->createNotFoundException('No genus found');
-
-        }
-
-        $transformer = $this->get('app.markdown_transformer');
-        $funFact = $transformer->parse($genus->getFunFact());
-
+        $markdownTransformer = $this->get('app.markdown_transformer');
+        $funFact = $markdownTransformer->parse($genus->getFunFact());
+        $this->get('logger')
+            ->info('Showing genus: '.$genus->getName());
         $recentNotes = $em->getRepository('AppBundle:GenusNote')
-                        ->findAllRecentNotesForGenus($genus);
-
-        return $this->render('genus/show.html.twig', [
+            ->findAllRecentNotesForGenus($genus);
+        return $this->render('genus/show.html.twig', array(
             'genus' => $genus,
             'funFact' => $funFact,
             'recentNoteCount' => count($recentNotes)
-        ]);
+        ));
     }
 
     /**
-     * @Route("/genus/{name}/notes", name="genus_show_notes")
+     * @Route("/genus/{slug}/notes", name="genus_show_notes")
      * @Method("GET")
      */
     public function getNotesAction(Genus $genus){
